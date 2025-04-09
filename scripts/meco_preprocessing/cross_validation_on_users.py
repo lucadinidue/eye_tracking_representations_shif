@@ -1,10 +1,10 @@
 import sys
 import os
 sys.path.append(os.path.abspath('.'))
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
 
 from utils.dataset_utils import create_senteces_from_data, scale_datasets, tokenize_and_align_labels
-from utils.custom_modeling_bert import BertForMultitaskTokenClassification
+from utils.custom_modeling_roberta import RobertaForMultiTaskTokenClassification
 from utils.custom_data_collator import DataCollatorForMultiTaskTokenClassification
 from transformers import AutoTokenizer, TrainingArguments, Trainer, set_seed, AutoConfig
 from sklearn.model_selection import KFold
@@ -29,8 +29,7 @@ def preprocess_dataset(dataset_path, model_name):
     df = pd.read_csv(dataset_path, index_col=0)
     dataset = create_senteces_from_data(df, TASKS)
 
-    # tokenizer = AutoTokenizer.from_pretrained(model_name, add_prefix_space=True)
-    tokenizer = AutoTokenizer.from_pretrained('models/bert_tokenizer', add_prefix_space=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, add_prefix_space=True)
 
     tokenized_dataset = dataset.map(
                     tokenize_and_align_labels(tokenizer,[f'label_{task}' for task in TASKS]),
@@ -77,7 +76,7 @@ def get_results(trainer):
 def evaluate_on_dataset(args, tokenized_dataset, data_collator, k=5):
     config = AutoConfig.from_pretrained(args.model_name)
     config.update({'tasks': TASKS, 'keys_to_ignore_at_inference':['mse_loss', 'labels', 'tasks_loss']})
-    model = BertForMultitaskTokenClassification.from_pretrained(args.model_name, config=config)
+    model = RobertaForMultiTaskTokenClassification.from_pretrained(args.model_name, config=config)
 
     training_args = TrainingArguments(
             output_dir='prova', 
@@ -126,7 +125,7 @@ def unroll_results_dict(user_id, user_results):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_name', dest='model_name', type=str)
+    parser.add_argument('-m', '--model_name', dest='model_name', default='FacebookAI/xlm-roberta-base', type=str)
     parser.add_argument('-b', '--batch_size', type=int, default=8)
     parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
     parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=200)
@@ -134,12 +133,13 @@ def main():
     parser.add_argument('-k', '--k_fold', type=int, default=5)
     args = parser.parse_args()
 
-    datasets_dir = 'data/eye_tracking_data/meco_users/'
-    out_path = f'data/eye_tracking_data/user_performances_random_init.csv'
+    datasets_dir = 'data/meco/meco_users/'
+    out_path = f'data/meco/cv_results_e{args.training_epochs}_lr{args.learning_rate}.csv'
     first_write = True if not os.path.exists(out_path) else False
     
     for user_file_name in sorted(os.listdir(datasets_dir)):        
         user_id = user_file_name.split('_')[1].split('.')[0]
+        print(f'Processing user {user_id}')
         user_file_path = os.path.join(datasets_dir, user_file_name)
         user_dataset, data_collator = preprocess_dataset(user_file_path, args.model_name)
         user_results = evaluate_on_dataset(args, user_dataset, data_collator, args.k_fold)
