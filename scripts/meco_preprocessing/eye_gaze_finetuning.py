@@ -60,6 +60,7 @@ def train_model(args,train_dataset, data_collator):
             num_train_epochs=args.training_epochs,
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
+            warmup_ratio=0.05,
             save_strategy = 'no'
             )
     
