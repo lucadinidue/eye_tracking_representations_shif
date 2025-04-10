@@ -2,3 +2,4 @@
 **/__pycache__/
 nohup.out
 data/meco/joint_data_trimmed.csv
+models/*
