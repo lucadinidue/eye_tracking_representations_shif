@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath('.'))
 from utils.dataset_utils import create_senteces_from_data, scale_datasets, tokenize_and_align_labels
 from utils.custom_data_collator import DataCollatorForMultiTaskTokenClassification
 from transformers import TrainingArguments, AutoTokenizer, Trainer, AutoConfig
-from utils.custom_modeling_bert import BertForMultitaskTokenClassification
+from utils.custom_modeling_roberta import RobertaForMultiTaskTokenClassification
 import pandas as pd
 import evaluate
 import argparse
@@ -48,7 +48,7 @@ def compute_metrics(eval_pred):
 def train_model(args,train_dataset, data_collator):
     config = AutoConfig.from_pretrained(args.model_name)
     config.update({'tasks': TASKS, 'keys_to_ignore_at_inference':['mse_loss', 'labels', 'tasks_loss']})
-    model = BertForMultitaskTokenClassification.from_pretrained(args.model_name, config=config)
+    model = RobertaForMultiTaskTokenClassification.from_pretrained(args.model_name, config=config)
 
     training_args = TrainingArguments(
             output_dir=args.output_directory, 
@@ -88,8 +88,8 @@ def main():
     parser.add_argument('-o', '--output_directory', dest='output_directory', type=str)
     parser.add_argument('-u', '--user_id', type=int)
     parser.add_argument('-b', '--batch_size', type=int, default=8)
-    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
-    parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=200)
+    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=1e-05)
+    parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=50)
     parser.add_argument('-d', '--weight_decay', dest='weight_decay', type=float, default=0.01)
     args = parser.parse_args()
 
