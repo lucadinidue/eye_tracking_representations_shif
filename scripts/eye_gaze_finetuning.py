@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath('.'))
 from utils.dataset_utils import create_senteces_from_data, scale_datasets, tokenize_and_align_labels
 from utils.custom_data_collator import DataCollatorForMultiTaskTokenClassification
 from transformers import TrainingArguments, AutoTokenizer, Trainer, AutoConfig
-from utils.custom_modeling_roberta import RobertaForMultiTaskTokenClassification
+from utils.custom_modeling_xlm_roberta import XLMRobertaForMultiTaskTokenClassification
 import pandas as pd
 import evaluate
 import argparse
@@ -45,13 +45,13 @@ def compute_metrics(eval_pred):
         }
     return res
 
-def train_model(args,train_dataset, data_collator):
+def train_model(args,train_dataset, data_collator, output_dir):
     config = AutoConfig.from_pretrained(args.model_name)
     config.update({'tasks': TASKS, 'keys_to_ignore_at_inference':['mse_loss', 'labels', 'tasks_loss']})
-    model = RobertaForMultiTaskTokenClassification.from_pretrained(args.model_name, config=config)
+    model = XLMRobertaForMultiTaskTokenClassification.from_pretrained(args.model_name, config=config)
 
     training_args = TrainingArguments(
-            output_dir=args.output_directory, 
+            output_dir=output_dir, 
             eval_strategy='epoch',
             logging_strategy='epoch',
             label_names=[f'label_{task}' for task in TASKS],
@@ -85,18 +85,20 @@ def train_model(args,train_dataset, data_collator):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_name', dest='model_name', type=str, default='FacebookAI/xlm-roberta-base')
-    parser.add_argument('-o', '--output_directory', dest='output_directory', type=str)
     parser.add_argument('-u', '--user_id', type=int)
     parser.add_argument('-b', '--batch_size', type=int, default=8)
-    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=1e-05)
+    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
     parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=50)
     parser.add_argument('-d', '--weight_decay', dest='weight_decay', type=float, default=0.01)
     args = parser.parse_args()
 
+    config = f'lr{args.learning_rate}_ep{args.training_epochs}'
+
     dataset_path = f'data/meco/meco_users/it_{args.user_id}.csv'
+    output_dir = f'models/{config}/user_{args.user_id}'
 
     user_dataset, data_collator = preprocess_dataset(dataset_path, args.model_name)
-    train_model(args, user_dataset, data_collator)
+    train_model(args, user_dataset, data_collator, output_dir)
 
 
 if __name__ == '__main__':

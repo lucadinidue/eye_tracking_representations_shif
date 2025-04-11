@@ -63,11 +63,13 @@ def get_attention_weights(model:AutoModelForMaskedLM, subwords_alignment_dict):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', '--user_id', type=str)
+    parser.add_argument('-c', '--training_config', type=str)
     args = parser.parse_args()
 
+
     dataset_path = f'data/meco/meco_users/it_{args.user_id}.csv'
-    model_path = f'models/user_{args.user_id}'
-    output_dir = f'data/attentions/user_{args.user_id}'
+    model_path = f'models/{args.training_config}/user_{args.user_id}'
+    output_dir = f'data/attentions/{args.training_config}/user_{args.user_id}'
 
     df = pd.read_csv(dataset_path, index_col=0)
     dataset = create_senteces_from_data(df, [], keep_id=True)
@@ -86,7 +88,6 @@ def main():
 
     for layer in range(12):
         output_path = os.path.join(output_dir, f'{layer}.json')
-        print(output_path)
         save_dictionary(attention_weights[layer], output_path)
 
 
