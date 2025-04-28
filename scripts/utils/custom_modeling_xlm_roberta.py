@@ -11,7 +11,7 @@ from torch import nn
 from transformers.utils import logging
 
 from transformers import XLMRobertaPreTrainedModel, XLMRobertaModel
-
+from transformers.models.xlm_roberta.modeling_xlm_roberta import XLMRobertaClassificationHead
 
 logger = logging.get_logger(__name__)
 
@@ -65,7 +65,6 @@ class MultiTaskTokenClassifierOutput(ModelOutput):
     """
 
     loss: Optional[torch.FloatTensor] = None
-    mse_loss: Optional[dict] = None
     logits: Tuple[torch.FloatTensor] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
@@ -75,8 +74,8 @@ class MultiTaskTokenClassifierOutput(ModelOutput):
 class XLMRobertaForMultiTaskTokenClassification(XLMRobertaPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        self.num_labels = config.num_labels
-
+        self.num_tasks = len(config.tasks)
+        
         self.roberta = XLMRobertaModel(config, add_pooling_layer=False)
         classifier_dropout = (
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
@@ -86,7 +85,6 @@ class XLMRobertaForMultiTaskTokenClassification(XLMRobertaPreTrainedModel):
 
         # classifiers
         self.tasks = config.tasks
-        self.num_tasks = len(self.tasks)
         self.classifiers = nn.ModuleDict({
             task: nn.Linear(config.hidden_size, 1) for
             task in self.tasks
@@ -128,19 +126,16 @@ class XLMRobertaForMultiTaskTokenClassification(XLMRobertaPreTrainedModel):
             return_dict=return_dict,
         )
 
+
         labels = dict()
         for key, value in labels_list.items():
             if key.startswith('label_'):
                 labels[key[len('label_'):]] = value
 
         sequence_output = outputs[0]
-        sequence_output = self.dropout(sequence_output)
-        
-        
-        logits = self.classifier(sequence_output)
+        sequence_output = self.dropout(sequence_output)       
 
         loss = 0
-        mse_loss = {}
         logits = {}
 
         for task in self.tasks:
@@ -162,7 +157,6 @@ class XLMRobertaForMultiTaskTokenClassification(XLMRobertaPreTrainedModel):
 
         return MultiTaskTokenClassifierOutput(
             loss=loss,
-            mse_loss=mse_loss,
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
