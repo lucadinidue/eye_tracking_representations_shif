@@ -9,7 +9,7 @@ def main():
     parser.add_argument('-i', '--input_file_name', type=str)
     args = parser.parse_args()
 
-    input_path = os.path.join('data/cv_results/', args.input_file_name)
+    input_path = os.path.join('data/results/cv_results/', args.input_file_name)
     output_path =input_path[:-len('csv')]+'png' 
 
     results_df = pd.read_csv(input_path)
