@@ -1,8 +1,8 @@
 import sys
 import os
-sys.path.append(os.path.abspath('.'))
+sys.path.append((os.path.join(os.path.dirname(__file__), '..')))
 
-from utils.dataset_utils import create_senteces_from_data, scale_datasets, tokenize_and_align_labels
+from utils.dataset_utils import create_senteces_from_data, scale_train_dataset, tokenize_and_align_labels
 from utils.custom_modeling_roberta import RobertaForMultiTaskTokenClassification
 from utils.custom_data_collator import DataCollatorForMultiTaskTokenClassification
 from transformers import AutoTokenizer, TrainingArguments, Trainer, set_seed, AutoConfig
@@ -27,6 +27,8 @@ def k_fold_split(dataset, k=5, seed=42):
 def preprocess_dataset(dataset_path, model_name):
     df = pd.read_csv(dataset_path, index_col=0)
     dataset = create_senteces_from_data(df, TASKS)
+
+    dataset = scale_train_dataset(dataset)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, add_prefix_space=True)
 
@@ -93,8 +95,7 @@ def evaluate_on_dataset(args, tokenized_dataset, data_collator, k=5):
     
     results = dict()
     for fold_idx, (train_dataset, test_dataset) in enumerate(k_fold_split(tokenized_dataset, k)):
-        train_dataset, test_dataset = scale_datasets(train_dataset, test_dataset)
-
+        
         trainer = Trainer(
             model=model,
             args=training_args,

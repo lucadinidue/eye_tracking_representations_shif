@@ -57,7 +57,7 @@ def create_and_fit_sclers(train_dataset:Dataset) -> dict[MinMaxScaler]:
 
     return scalers
 
-def scale_datasets(train_data: Dataset, test_data: Dataset) -> {Dataset, Dataset}:
+def scale_train_dataset(train_data: Dataset) -> {Dataset, Dataset}:
     features_scalers = create_and_fit_sclers(train_data)
 
     def minmaxscaling_function(row):
@@ -66,9 +66,8 @@ def scale_datasets(train_data: Dataset, test_data: Dataset) -> {Dataset, Dataset
         return row
 
     train_data = train_data.map(minmaxscaling_function)
-    test_data = test_data.map(minmaxscaling_function)
 
-    return train_data, test_data
+    return train_data
 
 
 def tokenize_and_align_labels(tokenizer:AutoTokenizer, features:list):
