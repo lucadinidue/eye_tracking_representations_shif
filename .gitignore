@@ -2,6 +2,7 @@
 **/__pycache__/
 nohup.out
 data/meco/joint_data_trimmed.csv
+data/ud_treebank/*
 models/*
 data/attentions/*
 bash_scripts/*

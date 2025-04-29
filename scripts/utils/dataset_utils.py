@@ -120,7 +120,7 @@ def align_to_original_words(model_tokens: list, original_tokens: list, subword_p
             token = token[len(subword_prefix):]
         if len(aligned_model_tokens) == 0:  # First token (serve?)
             aligned_model_tokens.append(token)
-        elif aligned_model_tokens[-1] + token in original_tokens[orig_idx]:  # We are in the second (third, fourth, ...) sub-token
+        elif original_tokens[orig_idx].startswith(aligned_model_tokens[-1] + token):  # We are in the second (third, fourth, ...) sub-token
             aligned_model_tokens[-1] += token  # so we merge the token with its preceding(s)
             alignment_id -= 1
         elif aligned_model_tokens[-1] +' '+token in original_tokens[orig_idx]: # Sometimes there is a space in the original tokens
@@ -152,6 +152,8 @@ def create_subwords_alignment(dataset: Dataset, tokenizer: AutoTokenizer, subwor
                 sentence[tok_id] = tok.replace('ô', '')
             if 'û' in tok:
                 sentence[tok_id] = tok.replace('û', '-')
+            if '…' in tok:
+                sentence[tok_id] = tok.replace('…', '...')
         if lowercase:
             sentence = [word.lower() for word in sentence]
         tokenized_sentence = tokenizer(sentence, is_split_into_words=True, return_tensors='pt')
@@ -165,3 +167,12 @@ def create_subwords_alignment(dataset: Dataset, tokenizer: AutoTokenizer, subwor
 def save_dictionary(dictionary, out_path):
     with open(out_path, 'w') as out_file:
         out_file.write(json.dumps(dictionary))
+
+
+def get_subword_prefix(tokenizer_name):
+    if 'xlm-roberta' in tokenizer_name.lower():
+        return '▁'
+    if 'roberta' in tokenizer_name.lower():
+        return'Ġ'
+    else:
+        raise Exception(f'Model {tokenizer_name} not supported yet.')
