@@ -70,6 +70,7 @@ def add_layer_attention_to_dataset(dataset, baseline_attention_dir, finetuned_at
 def sum_attention_across_dataset(dataset, feature):
     attention_counter_baseline = {}
     attention_counter_finetuned = {}
+    feature_occurrences = {}
 
     for el in dataset:
         assert len(el[feature]) == len(el['baseline_attention']) == len(el['finetuned_attention'])
@@ -77,8 +78,13 @@ def sum_attention_across_dataset(dataset, feature):
             if feature_value not in attention_counter_baseline:
                 attention_counter_baseline[feature_value] = 0
                 attention_counter_finetuned[feature_value] = 0
+                feature_occurrences[feature_value] = 0
             attention_counter_baseline[feature_value] += attention_bl
             attention_counter_finetuned[feature_value] += attention_ft
+            feature_occurrences[feature_value] += 1
+    for feature_value, num_occurrences in feature_occurrences.items():
+        attention_counter_baseline[feature_value] /= num_occurrences
+        attention_counter_finetuned[feature_value] /= num_occurrences
     return attention_counter_baseline, attention_counter_finetuned
 
 
@@ -114,7 +120,7 @@ def main():
     baseline_attention_dir = 'data/attentions/ud/baseline'
     finetuned_attention_dir = f'data/attentions/ud/finetuned/user_{args.user_id}'
 
-    output_dir = f'data/results/attention_shift_abs/{args.feature}'
+    output_dir = f'data/results/attention_shift/{args.feature}'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     output_path = os.path.join(output_dir, f'user_{args.user_id}.png')
