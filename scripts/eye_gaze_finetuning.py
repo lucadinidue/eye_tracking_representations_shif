@@ -84,18 +84,19 @@ def train_model(args, train_dataset, data_collator, output_dir):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', type=str, choices=['en', 'it'])
     parser.add_argument('-m', '--model_name', dest='model_name', type=str, default='FacebookAI/xlm-roberta-base')
     parser.add_argument('-u', '--user_id', type=int)
     parser.add_argument('-b', '--batch_size', type=int, default=8)
-    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
+    parser.add_argument('-r', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
     parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=50)
     parser.add_argument('-d', '--weight_decay', dest='weight_decay', type=float, default=0.01)
     args = parser.parse_args()
 
     config = f'lr{args.learning_rate}_ep{args.training_epochs}'
 
-    dataset_path = f'data/meco/meco_users/it_{args.user_id}.csv'
-    output_dir = f'models/{config}/user_{args.user_id}'
+    dataset_path = f'data/meco/{args.language}/{args.language}_{args.user_id}.csv'
+    output_dir = f'models/{args.language}/user_{args.user_id}'
 
     user_dataset, data_collator = preprocess_dataset(dataset_path, args.model_name)
     
