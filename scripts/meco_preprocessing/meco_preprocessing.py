@@ -1,17 +1,22 @@
 import pandas as pd
+import argparse
 import os
 
 COLS_TO_KEEP = ['uniform_id', 'trialid', 'sentnum', 'ianum', 'ia', 'firstfix.dur', 'firstrun.dur', 'dur', 'firstrun.nfix', 'nfix']
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--language', type=str, choices=['en', 'it'])
+    args = parser.parse_args()
+                                     
     dataset_path = 'data/meco/joint_data_trimmed.csv'
-    output_dir = 'data/meco/meco_users'
+    output_dir = f'data/meco/{args.language}'
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     df = pd.read_csv(dataset_path, index_col=0)
-    df = df[df['lang'] == 'it']     #  take only italian subset of the dataset
+    df = df[df['lang'] == args.language]     #  take only italian/english subset of the dataset
     df.loc[:, 'ia'] = df['ia'].fillna('[UNK]')      # 'ia' is the read word, if is NaN put the unknown token of the model tokenizer
     df = df.fillna(0.0)             # the NaN values correspond to skipped words
 
