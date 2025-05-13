@@ -6,3 +6,4 @@ data/ud_treebank/*
 models/*
 data/attentions/*
 bash_scripts/*
+misc/*
