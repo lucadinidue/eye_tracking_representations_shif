@@ -6,13 +6,12 @@ import os
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input_file_name', type=str)
+    parser.add_argument('-i', '--input_path', type=str)
     args = parser.parse_args()
 
-    input_path = os.path.join('data/results/cv_results/', args.input_file_name)
-    output_path =input_path[:-len('csv')]+'png' 
+    output_path = args.input_path[:-len('csv')]+'png' 
 
-    results_df = pd.read_csv(input_path)
+    results_df = pd.read_csv(args.input_path)
     num_users = len(results_df['user_id'].unique())
 
     fig, axes = plt.subplots(nrows=num_users, figsize=(8, 5 * num_users), sharex=True)

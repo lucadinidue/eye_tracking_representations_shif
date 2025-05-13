@@ -135,7 +135,7 @@ def main():
     args = parser.parse_args()
 
     datasets_dir = f'data/meco/{args.language}'
-    out_path = f'data/meco/results/{args.language}/cv_results/cv_results_e{args.training_epochs}_lr{args.learning_rate}.csv'
+    out_path = f'data/results/{args.language}/cv_results/cv_results_e{args.training_epochs}_lr{args.learning_rate}.csv'
     first_write = True if not os.path.exists(out_path) else False
     
     for user_file_name in sorted(os.listdir(datasets_dir)):        
