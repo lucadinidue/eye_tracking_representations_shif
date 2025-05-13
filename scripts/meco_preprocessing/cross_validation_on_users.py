@@ -125,16 +125,17 @@ def unroll_results_dict(user_id, user_results):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', type=str, choices=['en', 'it'])
     parser.add_argument('-m', '--model_name', dest='model_name', default='FacebookAI/xlm-roberta-base', type=str)
     parser.add_argument('-b', '--batch_size', type=int, default=8)
-    parser.add_argument('-l', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
+    parser.add_argument('-r', '--learning_rate', dest='learning_rate', type=float, default=5e-05)
     parser.add_argument('-e', '--epochs', dest='training_epochs', type=int, default=50)
     parser.add_argument('-d', '--weight_decay', dest='weight_decay', type=float, default=0.01)
     parser.add_argument('-k', '--k_fold', type=int, default=5)
     args = parser.parse_args()
 
-    datasets_dir = 'data/meco/meco_users/'
-    out_path = f'data/meco/results/cv_results/cv_results_e{args.training_epochs}_lr{args.learning_rate}.csv'
+    datasets_dir = f'data/meco/{args.language}'
+    out_path = f'data/meco/results/{args.language}/cv_results/cv_results_e{args.training_epochs}_lr{args.learning_rate}.csv'
     first_write = True if not os.path.exists(out_path) else False
     
     for user_file_name in sorted(os.listdir(datasets_dir)):        
