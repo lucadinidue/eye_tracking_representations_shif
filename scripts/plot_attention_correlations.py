@@ -9,8 +9,10 @@ import os
 
 sns.set_style('darkgrid')
 
-USERS = [26, 3, 11, 13, 17, 21, 26, 36, 37, 48]
-
+USERS = {
+    'it':[3, 11, 13, 17, 21, 26, 36, 37, 48],
+    'en': [3, 6, 72, 74, 76, 78, 79, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 93, 94, 95, 97, 98, 99, 101, 102]
+} 
 def load_json(src_path):
     with open(src_path, 'r') as src_file:
         loaded_dict = json.load(src_file)
@@ -47,13 +49,13 @@ def compute_layers_correlation(correlations_dict, attention_dir, eye_tracking_da
         correlations_dict['model'].append(model_name)
 
 
-def compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_dir, eye_tracking_feature, allow_negative_scores):
+def compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_dir, eye_tracking_feature, allow_negative_scores, language):
     correlations_dict = {'user': [], 'layer':[], 'score': [], 'model':[]}
 
-    for user_id in USERS:
+    for user_id in USERS[language]:
         user_attention_dir = os.path.join(attention_dir, f'user_{user_id}')
         user_baseline_attention_dir = os.path.join(baseline_attention_dir, f'user_{user_id}')
-        user_eye_tracking_path = os.path.join(eye_tracking_dir, f'it_{user_id}.csv')
+        user_eye_tracking_path = os.path.join(eye_tracking_dir, f'{language}_{user_id}.csv')
 
         eye_tracking_data = load_eye_tracking_data(user_eye_tracking_path, eye_tracking_feature)
         
@@ -65,18 +67,22 @@ def compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', type=str, choices=['en', 'it'])
     parser.add_argument('-e', '--eye_tracking_feature', type=str, default='dur')
     parser.add_argument('-n', '--allow_negative_scores', action='store_true')
     args = parser.parse_args()
 
-    attention_dir = f'data/attentions/meco/finetuned'
-    baseline_attention_dir = f'data/attentions/meco/baseline'
-    eye_tracking_dir = 'data/meco/meco_users'
-    output_dir = 'data/results/attention_correlation'
+    attention_dir = f'data/attentions/{args.language}/meco/finetuned'
+    baseline_attention_dir = f'data/attentions/{args.language}/meco/baseline'
+    eye_tracking_dir = f'data/meco/{args.language}'
+    output_dir = f'data/results/{args.language}/attention_correlation'
     if args.allow_negative_scores:
         output_dir += '_negatives'
 
-    correlations_df = compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_dir, args.eye_tracking_feature, args.allow_negative_scores)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    correlations_df = compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_dir, args.eye_tracking_feature, args.allow_negative_scores, args.language)
     sns.lineplot(data=correlations_df, x='layer', y='score', hue='model', palette='tab10', marker='o')
     plt.axhline(0, color='black', linewidth=1)
     plt.savefig(os.path.join(output_dir, 'avg_correlations.png'), bbox_inches='tight') 

@@ -13,7 +13,10 @@ import argparse
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-USERS = [3, 11, 13, 17, 21, 26, 36, 37, 48]
+USERS = {
+    'it':[3, 11, 13, 17, 21, 26, 36, 37, 48],
+    'en': [3, 6, 72, 74, 76, 78, 79, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 93, 94, 95, 97, 98, 99, 101, 102]
+} 
     
 
 def extract_attention_from_user(dataset_path, model_path, aggregation_method, output_dir):
@@ -33,12 +36,12 @@ def extract_attention_from_user(dataset_path, model_path, aggregation_method, ou
         output_path = os.path.join(output_dir, f'{layer}.json')
         save_dictionary(attention_weights[layer], output_path)
 
-def extract_baseline_attention(aggregation_method):
+def extract_baseline_attention(aggregation_method, language):
     model_path = 'FacebookAI/xlm-roberta-base'
 
-    for user_id in USERS:
-        dataset_path = f'data/meco/meco_users/it_{user_id}.csv'
-        output_dir = f'data/attentions/baseline/user_{user_id}'
+    for user_id in USERS[language]:
+        dataset_path = f'data/meco/{language}/{language}_{user_id}.csv'
+        output_dir = f'data/attentions/{language}/meco/baseline/user_{user_id}'
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -46,10 +49,10 @@ def extract_baseline_attention(aggregation_method):
         extract_attention_from_user(dataset_path, model_path, aggregation_method, output_dir)
 
 
-def extract_model_attention(user_id, training_config, aggregation_method):
-    dataset_path = f'data/meco/meco_users/it_{user_id}.csv'
-    model_path = f'models/{training_config}/user_{user_id}'
-    output_dir = f'data/attentions/{training_config}/user_{user_id}'
+def extract_model_attention(user_id, aggregation_method, language):
+    dataset_path = f'data/meco/{language}/{language}_{user_id}.csv'
+    model_path = f'models/{language}/user_{user_id}'
+    output_dir = f'data/attentions/{language}/meco/finetuned/user_{user_id}'
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -59,6 +62,7 @@ def extract_model_attention(user_id, training_config, aggregation_method):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', type=str, choices=['en', 'it'])
     parser.add_argument('-u', '--user_id', type=str)
     parser.add_argument('-c', '--training_config', type=str)
     parser.add_argument('-b', '--baseline', action='store_true')
@@ -66,9 +70,9 @@ def main():
     args = parser.parse_args()
 
     if args.baseline:
-        extract_baseline_attention(args.aggregation_method)
+        extract_baseline_attention(args.aggregation_method, args.language)
     else:
-        extract_model_attention(args.user_id, args.training_config, args.aggregation_method)
+        extract_model_attention(args.user_id, args.aggregation_method, args.language)
 
 
 if __name__ == '__main__':
