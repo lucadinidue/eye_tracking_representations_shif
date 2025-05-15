@@ -3,8 +3,8 @@ from typing import List
 import pandas as pd
 import argparse
 
-######## DA FINIRE!!!
-
+IDS_TO_SKIP =  ['tut-3572', 'tut-3587', '2_Europarl-194', '2_Europarl-200', '2_Europarl-247', '2_Europarl-265', '2_Europarl-267',
+                'reviews-116821-0012', 'weblog-blogspot.com_rigorousintuition_20050518101500_ENG_20050518_101500-0070']
 
 class Token():
 
@@ -49,8 +49,10 @@ class Sentence():
                 try:
                     self.tokens[token.head_idx].ariety += 1
                 except:
-                    self.tokens[token.head_idx-1].ariety += 1 # Possibile errore di annotazione?
-    
+                    try:
+                        self.tokens[token.head_idx-1].ariety += 1 # Possibile errore di annotazione?
+                    except:
+                        print(self.sentence_id)   # Li escludiamo poi 
 
 def load_sentences(src_path):
     sentences = []
@@ -97,8 +99,7 @@ def create_sentences_df(sentences, min_length):
     sentences_dict = {'sentence_id':[] , 'tokens':[], 'index':[], 'length':[], 'pos':[], 'head_dist':[], 'relation_type':[], 'ariety': []}
 
     for sentence in sentences:
-        if sentence.sentence_id in ['tut-3572', 'tut-3587', '2_Europarl-194', '2_Europarl-200', '2_Europarl-247', '2_Europarl-265', 
-                                    '2_Europarl-267']: # lead to error due to special characters    
+        if sentence.sentence_id in IDS_TO_SKIP: # lead to error due to special characters    
             continue
         if len(sentence.tokens) >= min_length:
             sentence_tokens = list(sentence.tokens.values())
@@ -115,12 +116,16 @@ def create_sentences_df(sentences, min_length):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--min_length', type=int, default=6)
+    parser.add_argument('-l', '--language', type=str, choices=['it', 'en'])
+    parser.add_argument('-m', '--min_length', type=int, default=6)
     args =  parser.parse_args()
 
-
-    src_path = 'data/ud_treebank/it_isdt-ud-train.conllu'
-    out_path = 'data/ud_treebank/it_isdt-ud-train_sentences.csv'
+    if args.language == 'it':
+        src_path = 'data/ud_treebank/it_isdt-ud-train.conllu'
+        out_path = 'data/ud_treebank/it_isdt-ud-train_sentences.csv'
+    else:
+        src_path = 'data/ud_treebank/en_ewt-ud-train.conllu'
+        out_path = 'data/ud_treebank/en_ewt-ud-train_sentences.csv'
 
     sentences = load_sentences(src_path)
     sentences_df = create_sentences_df(sentences, min_length=args.min_length)

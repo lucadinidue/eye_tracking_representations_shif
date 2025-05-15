@@ -105,7 +105,7 @@ def tokenize_and_align_labels(tokenizer:AutoTokenizer, features:list):
     return _tokenize_and_align_labels
 
 def align_to_original_words(model_tokens: list, original_tokens: list, subword_prefix: str,
-                            lowercase: bool = False) -> list:
+                            lowercase: bool = False, p = False) -> list:
     if lowercase:
         original_tokens = [tok.lower() for tok in original_tokens]
     model_tokens = model_tokens[1: -1]  # Remove <s> and </s>
@@ -114,10 +114,11 @@ def align_to_original_words(model_tokens: list, original_tokens: list, subword_p
     alignment_id = -1
     orig_idx = 0
     for token in model_tokens:
-        alignment_id += 1
-
         if token.startswith(subword_prefix):  # Remove the sub-word prefix
             token = token[len(subword_prefix):]
+            if token == '':
+                continue
+        alignment_id += 1 # moved here to avoid empty tooken
         if len(aligned_model_tokens) == 0:  # First token (serve?)
             aligned_model_tokens.append(token)
         elif original_tokens[orig_idx].startswith(aligned_model_tokens[-1] + token):  # We are in the second (third, fourth, ...) sub-token

@@ -31,12 +31,16 @@ def load_ud_sentences(src_path):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', type=str, choices=['it', 'en'])
     parser.add_argument('-m', '--model_path', type=str)
     parser.add_argument('-o', '--output_dir', type=str)
     parser.add_argument('-a', '--aggregation_method', type=str, choices=['cls', 'avg'], default='avg')
     args = parser.parse_args()
 
-    ud_path = 'data/ud_treebank/it_isdt-ud-train_sentences.csv'
+    if args.language == 'it':
+        ud_path = 'data/ud_treebank/it_isdt-ud-train_sentences.csv'
+    else:
+        ud_path = 'data/ud_treebank/en_ewt-ud-train_sentences.csv'
     dataset = load_ud_sentences(ud_path)
 
     model_type = 'FacebookAI/xlm-roberta-base'
