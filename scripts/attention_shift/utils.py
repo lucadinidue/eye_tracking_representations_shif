@@ -63,7 +63,7 @@ def add_attentions_to_dataset(dataset, baseline_attentions, finetuned_attentions
     return dataset
 
 
-def sum_attention_across_dataset(dataset, feature, pos_filter):
+def sum_attention_across_dataset(dataset, feature, pos_filter, relation_filter):
     attention_counter_baseline = [defaultdict(float) for _ in range(12)]
     attention_counter_finetuned = [defaultdict(float) for _ in range(12)]
     feature_occurrences = defaultdict(int)
@@ -71,12 +71,13 @@ def sum_attention_across_dataset(dataset, feature, pos_filter):
     for el in dataset:
         for i, feature_value in enumerate(el[feature]):
             if not pos_filter or el['pos'][i] == pos_filter:
-                feature_occurrences[feature_value] += 1
-                for layer in range(12):
-                    attention_bl = el[f'baseline_attention_{layer}'][i]
-                    attention_ft = el[f'finetuned_attention_{layer}'][i]
-                    attention_counter_baseline[layer][feature_value] += attention_bl
-                    attention_counter_finetuned[layer][feature_value] += attention_ft
+                if not relation_filter or el['relation_type'][i] == relation_filter: 
+                    feature_occurrences[feature_value] += 1
+                    for layer in range(12):
+                        attention_bl = el[f'baseline_attention_{layer}'][i]
+                        attention_ft = el[f'finetuned_attention_{layer}'][i]
+                        attention_counter_baseline[layer][feature_value] += attention_bl
+                        attention_counter_finetuned[layer][feature_value] += attention_ft
 
     # Normalize over occurrences
     for layer in range(12):
@@ -109,10 +110,10 @@ def compute_layer_attention_shift(attention_counter_baseline, attention_counter_
 
 
 
-def compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter):
+def compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter, relation_filter):
 
     dataset = add_attentions_to_dataset(dataset, baseline_attentions, finetuned_attentions, normalize)
-    attention_counter_baseline, attention_counter_finetuned, feature_occurences = sum_attention_across_dataset(dataset, feature, pos_filter) 
+    attention_counter_baseline, attention_counter_finetuned, feature_occurences = sum_attention_across_dataset(dataset, feature, pos_filter, relation_filter) 
 
 
     all_layers_df = []
@@ -151,7 +152,7 @@ def plot_attention_shift(attention_shift, max_plot_value, feature_name, output_p
     plt.show()
     plt.close()
 
-def load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, language, output_dir, normalize, feature, pos_filter, max_plot_value=None, plot_user=False):
+def load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, language, output_dir, normalize, feature, pos_filter, relation_filter, max_plot_value=None, plot_user=False):
     dataset = load_ud_dataset(ud_path)
     baseline_attentions = {layer: load_json(os.path.join(baseline_attention_dir, f'{layer}.json')) for layer in range(12)}
 
@@ -161,7 +162,7 @@ def load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, language,
             finetuned_attention_dir = f'data/attentions/{language}/ud/finetuned/user_{user_id}'
             output_path = os.path.join(output_dir, f'user_{user_id}.png')
             finetuned_attentions = {layer: load_json(os.path.join(finetuned_attention_dir, f'{layer}.json')) for layer in range(12)}
-            attention_shift, feature_occurences = compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter)
+            attention_shift, feature_occurences = compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter, relation_filter)
             if plot_user:
                 plot_attention_shift(attention_shift, max_plot_value, feature, output_path)
             attention_shift['user'] = user_id

@@ -27,6 +27,7 @@ def main():
     parser.add_argument('-m', '--max_plot_value', type=int)
     parser.add_argument('-n', '--normalize', action='store_true')
     parser.add_argument('-p', '--pos_filter', type=str)
+    parser.add_argument('-r', '--relation_filter', type=str)
     args = parser.parse_args()
 
     if args.language == 'it':
@@ -38,12 +39,14 @@ def main():
     output_dir = f'data/results/{args.language}/attention_shift/{args.feature}'
     if args.pos_filter:
         output_dir = output_dir+f'_{args.pos_filter}'
+    if args.relation_filter:
+        output_dir = output_dir+f'_{args.relation_filter}'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     
     user_ids = USER_IDS[args.language]
-    all_attention_shifts_df, feature_occurences = load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, args.language, output_dir, args.normalize, args.feature, args.pos_filter, args.max_plot_value, plot_user=True)
+    all_attention_shifts_df, feature_occurences = load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, args.language, output_dir, args.normalize, args.feature, args.pos_filter, args.relation_filter, args.max_plot_value, plot_user=True)
 
     output_path = os.path.join(output_dir, f'feature_distribution.png')
     plot_feature_occurences(feature_occurences, args.feature, output_path)

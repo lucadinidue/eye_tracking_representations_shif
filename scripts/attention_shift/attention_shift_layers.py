@@ -21,6 +21,8 @@ def main():
     parser.add_argument('-m', '--max_plot_value', type=int)
     parser.add_argument('-n', '--normalize', action='store_true')
     parser.add_argument('-p', '--pos_filter', type=str)
+    parser.add_argument('-r', '--relation_filter', type=str)
+
     args = parser.parse_args()
     
     baseline_attention_dir = f'../data/attentions/{args.language}/ud/baseline'
@@ -34,11 +36,13 @@ def main():
     output_dir = f'data/results/{args.language}/attention_shift/{args.feature}'
     if args.pos_filter:
         output_dir = output_dir+f'_{args.pos_filter}'
+    if args.relation_filter:
+        output_dir = output_dir+f'_{args.relation_filter}'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     user_ids = USER_IDS[args.language]
-    all_attention_shifts_df, _ = load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, args.language, output_dir, args.normalize, args.feature, args.pos_filter)
+    all_attention_shifts_df, _ = load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, args.language, output_dir, args.normalize, args.feature, args.pos_filter, args.relaion_filter, args.max_plot_value, plot_user=False)
 
     difference_df = all_attention_shifts_df[all_attention_shifts_df['model'] == 'difference']
 
