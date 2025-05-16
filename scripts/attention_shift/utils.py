@@ -5,16 +5,10 @@ from tqdm import tqdm
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import argparse
 import json
 import ast
 import csv
 import os
-
-sns.set_style('darkgrid')
-
-USER_IDS = [3, 11, 13, 17, 21, 26, 36, 37, 48]
-
 
 def load_json(src_path):
     with open(src_path, 'r') as src_file:
@@ -91,7 +85,7 @@ def sum_attention_across_dataset(dataset, feature, pos_filter):
             attention_counter_baseline[layer][feature_value] /= count
             attention_counter_finetuned[layer][feature_value] /= count
 
-    return attention_counter_baseline, attention_counter_finetuned
+    return attention_counter_baseline, attention_counter_finetuned, feature_occurrences
 
 
 
@@ -104,18 +98,22 @@ def compute_layer_attention_shift(attention_counter_baseline, attention_counter_
         layer_records.append({'feature_value': feat_value, 'attention': attention_counter_finetuned[feat_value], 'model': 'finetuned'})
 
         if add_difference:
+            difference =  attention_counter_finetuned[feat_value] - attention_counter_baseline[feat_value]
+            relative_difference = difference / attention_counter_baseline[feat_value]
             layer_records.append({'feature_value': feat_value, 
-                            'attention': attention_counter_finetuned[feat_value] - attention_counter_baseline[feat_value], 
+                            'attention': relative_difference, 
                             'model': 'difference'})
 
     layer_df = pd.DataFrame.from_records(layer_records)
     return layer_df
 
 
+
 def compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter):
 
     dataset = add_attentions_to_dataset(dataset, baseline_attentions, finetuned_attentions, normalize)
-    attention_counter_baseline, attention_counter_finetuned = sum_attention_across_dataset(dataset, feature, pos_filter) 
+    attention_counter_baseline, attention_counter_finetuned, feature_occurences = sum_attention_across_dataset(dataset, feature, pos_filter) 
+
 
     all_layers_df = []
     for layer in range(12):
@@ -125,7 +123,7 @@ def compute_user_shift(dataset, baseline_attentions, finetuned_attentions, norma
         layer_df['layer'] = layer
         all_layers_df.append(layer_df)
 
-    return pd.concat(all_layers_df, ignore_index=True)
+    return pd.concat(all_layers_df, ignore_index=True), feature_occurences
 
 
 def plot_attention_shift(attention_shift, max_plot_value, feature_name, output_path):
@@ -133,6 +131,7 @@ def plot_attention_shift(attention_shift, max_plot_value, feature_name, output_p
 
     if max_plot_value:
         attention_shift = attention_shift[attention_shift['feature_value'] <= max_plot_value]
+        attention_shift = attention_shift[attention_shift['feature_value'] >= -max_plot_value]
 
     for layer in list(attention_shift['layer'].unique()):
         layer_attention_shift = attention_shift[attention_shift['layer'] == layer]
@@ -152,43 +151,31 @@ def plot_attention_shift(attention_shift, max_plot_value, feature_name, output_p
     plt.show()
     plt.close()
 
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-f', '--feature', type=str)
-    parser.add_argument('-m', '--max_plot_value', type=int)
-    parser.add_argument('-n', '--normalize', action='store_true')
-    parser.add_argument('-p', '--pos_filter', type=str)
-    args = parser.parse_args()
-
-    ud_path = 'data/ud_treebank/it_isdt-ud-train_sentences.csv'
-    baseline_attention_dir = 'data/attentions/ud/baseline'
-
-    output_dir = f'data/results/attention_shift/{args.feature}'
-    if args.pos_filter:
-        output_dir = output_dir+f'_{args.pos_filter}'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
+def load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, language, output_dir, normalize, feature, pos_filter, max_plot_value=None, plot_user=False):
     dataset = load_ud_dataset(ud_path)
     baseline_attentions = {layer: load_json(os.path.join(baseline_attention_dir, f'{layer}.json')) for layer in range(12)}
 
     all_attention_shifts = []
-    with tqdm(total=len(USER_IDS)) as pbar:
-        for user_id in USER_IDS:
-            finetuned_attention_dir = f'data/attentions/ud/finetuned/user_{user_id}'
+    with tqdm(total=len(user_ids)) as pbar:
+        for user_id in user_ids:
+            finetuned_attention_dir = f'data/attentions/{language}/ud/finetuned/user_{user_id}'
             output_path = os.path.join(output_dir, f'user_{user_id}.png')
             finetuned_attentions = {layer: load_json(os.path.join(finetuned_attention_dir, f'{layer}.json')) for layer in range(12)}
-            attention_shift = compute_user_shift(dataset, baseline_attentions, finetuned_attentions, args.normalize, args.feature, args.pos_filter)
-            plot_attention_shift(attention_shift, args.max_plot_value, args.feature, output_path)
+            attention_shift, feature_occurences = compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter)
+            if plot_user:
+                plot_attention_shift(attention_shift, max_plot_value, feature, output_path)
             attention_shift['user'] = user_id
             all_attention_shifts.append(attention_shift)
             pbar.update(1)
-
-    output_path = os.path.join(output_dir, f'user_avg.png')
     all_attention_shifts_df = pd.concat(all_attention_shifts, ignore_index=True)
-    plot_attention_shift(all_attention_shifts_df, args.max_plot_value, args.feature, output_path)
-    
+    return all_attention_shifts_df, feature_occurences
 
-if __name__ == '__main__':
-    main()
+def plot_feature_occurences(feature_occurences, feature_name, output_path):
+    x = list(feature_occurences.keys())
+    y = list(feature_occurences.values())
+    plt.bar(x, y)
+    plt.xticks(rotation=90)
+    plt.title(f'Values distribution for feature: {feature_name}')
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.show()
