@@ -42,6 +42,14 @@ def main():
 
     difference_df = all_attention_shifts_df[all_attention_shifts_df['model'] == 'difference']
 
+    output_path = os.path.join(output_dir, 'layers_average.png')
+    plt.figure(figsize=(20, 10))
+    p = sns.barplot(data=difference_df, x='feature_value', y='attention')
+    p.set_title(f'Attention shift for {args.feature} averaged across layers')
+    plt.savefig(output_path, bbox_inches='tight')
+    plt.show()
+    plt.clf()
+
     output_path = os.path.join(output_dir, 'differences_across_layers.png')
     plt.figure(figsize=(20, 10))
     p = sns.lineplot(data=difference_df, x='layer', y='attention', hue='feature_value')

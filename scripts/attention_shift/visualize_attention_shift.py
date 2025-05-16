@@ -49,7 +49,6 @@ def main():
     plot_feature_occurences(feature_occurences, args.feature, output_path)
 
     output_path = os.path.join(output_dir, f'user_avg.png')
-    all_attention_shifts_df = pd.concat(all_attention_shifts_df, ignore_index=True)
     plot_attention_shift(all_attention_shifts_df, args.max_plot_value, args.feature, output_path)
     
 
