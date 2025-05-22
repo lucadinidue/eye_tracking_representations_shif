@@ -3,6 +3,7 @@ from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import numpy as np
 import argparse
 import json
 import os
@@ -23,12 +24,16 @@ def load_eye_tracking_data(src_path, col):
     gaze_dataset = create_senteces_from_data(data, [col], keep_id=True)
     return gaze_dataset
 
+def normalize_list(l):
+    a = np.array(l)
+    return (a / a.sum()).tolist()
+
 def compute_layer_correlation(eye_tracking_data, layer_attentions, eye_tracking_feature, allow_negative_scores):
     human_attentions = []
     model_attentions = []
     for sentence in eye_tracking_data:
-        human_attentions += sentence[f'label_{eye_tracking_feature}']
-        model_attentions += layer_attentions[sentence['id']]
+        human_attentions += normalize_list(sentence[f'label_{eye_tracking_feature}'])
+        model_attentions += normalize_list(layer_attentions[sentence['id']])
     corr = spearmanr(human_attentions, model_attentions)
     if corr.pvalue < 0.05:
         if allow_negative_scores:
@@ -75,7 +80,7 @@ def main():
     attention_dir = f'data/attentions/{args.language}/meco/finetuned'
     baseline_attention_dir = f'data/attentions/{args.language}/meco/baseline'
     eye_tracking_dir = f'data/meco/{args.language}'
-    output_dir = f'data/results/{args.language}/attention_correlation'
+    output_dir = f'data/results/{args.language}/attention_correlation_norm'
     if args.allow_negative_scores:
         output_dir += '_negatives'
 
