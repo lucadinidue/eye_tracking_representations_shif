@@ -1,15 +1,6 @@
-from collections import defaultdict
-import matplotlib.pyplot as plt
-from datasets import Dataset
-from tqdm import tqdm
 import seaborn as sns
 from utils import *
-import pandas as pd
-import numpy as np
 import argparse
-import json
-import ast
-import csv
 import os
 
 sns.set_style('darkgrid')
@@ -26,7 +17,7 @@ def main():
     parser.add_argument('-f', '--feature', type=str)
     parser.add_argument('-m', '--max_plot_value', type=int)
     parser.add_argument('-n', '--normalize', action='store_true')
-    parser.add_argument('-p', '--pos_filter', type=str)
+    parser.add_argument('-p', '--pos_filter', nargs='+', default=[])
     parser.add_argument('-r', '--relation_filter', type=str)
     args = parser.parse_args()
 

@@ -70,7 +70,7 @@ def sum_attention_across_dataset(dataset, feature, pos_filter, relation_filter):
 
     for el in dataset:
         for i, feature_value in enumerate(el[feature]):
-            if not pos_filter or el['pos'][i] == pos_filter:
+            if not pos_filter or el['pos'][i] in pos_filter:
                 if not relation_filter or el['relation_type'][i] == relation_filter: 
                     feature_occurrences[feature_value] += 1
                     for layer in range(12):
