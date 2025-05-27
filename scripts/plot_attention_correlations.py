@@ -32,8 +32,10 @@ def compute_layer_correlation(eye_tracking_data, layer_attentions, eye_tracking_
     human_attentions = []
     model_attentions = []
     for sentence in eye_tracking_data:
-        human_attentions += normalize_list(sentence[f'label_{eye_tracking_feature}'])
-        model_attentions += normalize_list(layer_attentions[sentence['id']])
+        human_attentions += sentence[f'label_{eye_tracking_feature}']
+        model_attentions += layer_attentions[sentence['id']]
+        # human_attentions += normalize_list(sentence[f'label_{eye_tracking_feature}'])
+        # model_attentions += normalize_list(layer_attentions[sentence['id']])
     corr = spearmanr(human_attentions, model_attentions)
     if corr.pvalue < 0.05:
         if allow_negative_scores:
@@ -65,7 +67,7 @@ def compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_
         eye_tracking_data = load_eye_tracking_data(user_eye_tracking_path, eye_tracking_feature)
         
         compute_layers_correlation(correlations_dict, user_attention_dir, eye_tracking_data, user_id, eye_tracking_feature, 'finetuned', allow_negative_scores)
-        compute_layers_correlation(correlations_dict, user_baseline_attention_dir, eye_tracking_data, user_id, eye_tracking_feature, 'baseline', allow_negative_scores)
+        compute_layers_correlation(correlations_dict, user_baseline_attention_dir, eye_tracking_data, user_id, eye_tracking_feature, 'pre-trained', allow_negative_scores)
 
     return pd.DataFrame.from_dict(correlations_dict)
 
@@ -80,7 +82,7 @@ def main():
     attention_dir = f'data/attentions/{args.language}/meco/finetuned'
     baseline_attention_dir = f'data/attentions/{args.language}/meco/baseline'
     eye_tracking_dir = f'data/meco/{args.language}'
-    output_dir = f'data/results/{args.language}/attention_correlation_norm'
+    output_dir = f'data/results/{args.language}/attention_correlation'
     if args.allow_negative_scores:
         output_dir += '_negatives'
 
@@ -88,15 +90,17 @@ def main():
         os.makedirs(output_dir)
 
     correlations_df = compute_correlations_df(attention_dir, baseline_attention_dir, eye_tracking_dir, args.eye_tracking_feature, args.allow_negative_scores, args.language)
-    sns.lineplot(data=correlations_df, x='layer', y='score', hue='model', palette='tab10', marker='o')
-    plt.axhline(0, color='black', linewidth=1)
+    language = 'Italian' if args.language == 'it' else 'English'
+    sns.lineplot(data=correlations_df, x='layer', y='score', hue='model', palette='tab10', marker='o').set_title(language)
+    plt.ylim(0, 0.65)
+    # plt.axhline(0, color='black', linewidth=1)
     plt.savefig(os.path.join(output_dir, 'avg_correlations.png'), bbox_inches='tight') 
     plt.cla()
 
     for user_id in sorted(correlations_df['user'].unique()):
         user_df = correlations_df[correlations_df['user'] == user_id]    
         sns.lineplot(data=user_df, x='layer', y='score', hue='model', palette='tab10', marker='o').set_title(f'User {user_id}')
-        plt.axhline(0, color='black', linewidth=1)
+        # plt.axhline(0, color='black', linewidth=1)
         plt.savefig(os.path.join(output_dir, f'{user_id}.png'), bbox_inches='tight') 
         plt.cla()
 

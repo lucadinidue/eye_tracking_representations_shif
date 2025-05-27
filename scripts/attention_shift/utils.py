@@ -145,7 +145,7 @@ def plot_attention_shift(attention_shift, max_plot_value, feature_name, output_p
             ax=axes[layer]
         )
         
-        axes[layer].set_title(f'Feature = {feature_name}, Layer = {layer+1}')
+        axes[layer].set_title(f'Feature = {feature_name}, Layer = {layer}')
     
     plt.tight_layout()
     plt.savefig(output_path)
@@ -160,10 +160,10 @@ def load_attention_shift_df(user_ids, ud_path, baseline_attention_dir, language,
     with tqdm(total=len(user_ids)) as pbar:
         for user_id in user_ids:
             finetuned_attention_dir = f'data/attentions/{language}/ud/finetuned/user_{user_id}'
-            output_path = os.path.join(output_dir, f'user_{user_id}.png')
             finetuned_attentions = {layer: load_json(os.path.join(finetuned_attention_dir, f'{layer}.json')) for layer in range(12)}
             attention_shift, feature_occurences = compute_user_shift(dataset, baseline_attentions, finetuned_attentions, normalize, feature, pos_filter, relation_filter)
             if plot_user:
+                output_path = os.path.join(output_dir, f'user_{user_id}.png')
                 plot_attention_shift(attention_shift, max_plot_value, feature, output_path)
             attention_shift['user'] = user_id
             all_attention_shifts.append(attention_shift)
