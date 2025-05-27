@@ -7,3 +7,7 @@ models/*
 data/attentions/*
 bash_scripts/*
 misc/*
+output*
+attention_correlation_*
+*across_layers*
+scripts/attention_shift/attention_shift_layers.py
